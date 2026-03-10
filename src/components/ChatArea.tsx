@@ -17,6 +17,7 @@ import {
 } from '@/lib/rag'
 import { ModeSelector, ModeActions, FreeActions, LessonPlanningActions, MODE_CONFIGS } from '@/components/ModeBar'
 import { LessonProgress } from '@/components/LessonProgress'
+import { MarkdownMessage } from '@/components/MarkdownMessage'
 import type { AppMode, ChatMessage, LessonState, Settings } from '@/types'
 
 interface ChatAreaProps {
@@ -593,13 +594,17 @@ export function ChatArea({
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                     msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-foreground'
+                      ? 'bg-primary text-primary-foreground whitespace-pre-wrap'
+                      : 'bg-muted text-foreground markdown-body'
                   }`}
                 >
-                  {msg.content}
+                  {msg.role === 'assistant' ? (
+                    <MarkdownMessage content={msg.content} />
+                  ) : (
+                    msg.content
+                  )}
                 </div>
               </div>
             ))}

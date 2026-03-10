@@ -1,1 +1,9 @@
 /* Choitore */
+
+/* --- Markdown メッセージ内のスタイル微調整 --- */
+.markdown-body > :first-child {
+  margin-top: 0;
+}
+.markdown-body > :last-child {
+  margin-bottom: 0;
+}
