@@ -95,7 +95,7 @@ async function callOpenAI(params: AIRequestParams, systemPrompt: string): Promis
     body: JSON.stringify({
       model: params.modelId,
       messages,
-      max_tokens: 2048,
+      max_tokens: 4096,
     }),
   })
 
@@ -124,7 +124,7 @@ async function callAnthropic(params: AIRequestParams, systemPrompt: string): Pro
     },
     body: JSON.stringify({
       model: params.modelId,
-      max_tokens: 2048,
+      max_tokens: 4096,
       system: systemPrompt,
       messages,
     }),
