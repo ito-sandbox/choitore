@@ -64,6 +64,7 @@ export function ChatArea({
   const [isExtractingPDF, setIsExtractingPDF] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const [quizActive, setQuizActive] = useState(false)
+  const [hasTeachingStarted, setHasTeachingStarted] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -248,36 +249,9 @@ export function ChatArea({
         timestamp: Date.now(),
       })
 
-      // --- Step 2: 自動で授業開始（第1セクション） ---
+      // --- Step 2: 授業フェーズに遷移（ユーザーが「次へ」or セクション選択で開始） ---
       onBeginTeaching('')
-
-      const sections = getTeachingSections(currentMaterial.content)
-      if (sections.length === 0) return
-
-      const sectionInfo: LessonChunkInfo = {
-        text: sections[0].text,
-        source: sections[0].label,
-        index: 0,
-        total: sections.length,
-      }
-
-      const teachResponse = await sendMessage({
-        provider: settings.apiProvider,
-        apiKey: settings.apiKey,
-        modelId: settings.modelId,
-        personality: settings.aiPersonality,
-        materialContent: currentMaterial?.content ?? null,
-        messages,
-        userMessage: config.teachingPrompt!,
-        lessonChunk: sectionInfo,
-      })
-
-      onAddMessage({
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: teachResponse,
-        timestamp: Date.now(),
-      })
+      setHasTeachingStarted(false)
     } catch (error) {
       onUpdateLessonSections(mechLabels)
       onAddMessage({
@@ -294,8 +268,31 @@ export function ChatArea({
   // --- 授業モード「次へ」 ---
   const handleLessonNext = async () => {
     if (!lessonState || !currentMaterial) return
-    const nextIndex = lessonState.currentIndex + 1
     const sections = getTeachingSections(currentMaterial.content)
+    const config = MODE_CONFIGS.lesson
+
+    if (!hasTeachingStarted) {
+      // 初回：現在のセクション（通常はindex 0）の授業を開始
+      setHasTeachingStarted(true)
+      const idx = lessonState.currentIndex
+      if (idx >= sections.length) return
+      const displayName = lessonState.sections[idx] ?? sections[idx].label
+      const sectionInfo: LessonChunkInfo = {
+        text: sections[idx].text,
+        source: displayName,
+        index: idx,
+        total: sections.length,
+      }
+      await sendWithPrompt(
+        config.teachingPrompt!,
+        `📖 ${displayName}`,
+        sectionInfo,
+        lessonState.userPreference || undefined,
+      )
+      return
+    }
+
+    const nextIndex = lessonState.currentIndex + 1
 
     if (nextIndex >= sections.length) {
       // 全セクション完了
@@ -332,6 +329,7 @@ export function ChatArea({
     if (index < 0 || index >= sections.length) return
 
     setQuizActive(false)
+    setHasTeachingStarted(true)
     onJumpToSection(index)
     requestAnimationFrame(scrollToLastMessage)
     const displayName = lessonState.sections[index] ?? sections[index].label
@@ -363,6 +361,7 @@ export function ChatArea({
   // --- モード終了 ---
   const handleExitMode = () => {
     setQuizActive(false)
+    setHasTeachingStarted(false)
     if (currentMode === 'lesson') {
       clearAIGeneratedSections()
       onEndLesson()
