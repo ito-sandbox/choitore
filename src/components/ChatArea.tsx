@@ -66,17 +66,21 @@ export function ChatArea({
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const scrollToBottom = () => {
+  const scrollToLastMessage = () => {
     if (scrollRef.current) {
       const viewport = scrollRef.current.querySelector('[data-slot="scroll-area-viewport"]')
-      if (viewport) {
-        viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' })
+      const lastMsg = scrollRef.current.querySelector('[data-msg]:last-of-type')
+      if (viewport && lastMsg) {
+        const viewportRect = viewport.getBoundingClientRect()
+        const msgRect = lastMsg.getBoundingClientRect()
+        const offset = msgRect.top - viewportRect.top + viewport.scrollTop
+        viewport.scrollTo({ top: offset - 16, behavior: 'smooth' })
       }
     }
   }
 
   useEffect(() => {
-    scrollToBottom()
+    requestAnimationFrame(scrollToLastMessage)
   }, [messages])
 
   // --- 現在のレッスンセクション情報を取得（AI生成セクション優先） ---
@@ -121,7 +125,7 @@ export function ChatArea({
     setInput('')
     setIsLoading(true)
     // ユーザーメッセージ追加直後にスクロール（ローディング表示を見せる）
-    requestAnimationFrame(scrollToBottom)
+    requestAnimationFrame(scrollToLastMessage)
 
     try {
       const response = await sendMessage({
@@ -328,7 +332,7 @@ export function ChatArea({
 
     setQuizActive(false)
     onJumpToSection(index)
-    scrollToBottom()
+    requestAnimationFrame(scrollToLastMessage)
     const displayName = lessonState.sections[index] ?? sections[index].label
     const sectionInfo: LessonChunkInfo = {
       text: sections[index].text,
@@ -585,6 +589,7 @@ export function ChatArea({
             {messages.map((msg) => (
               <div
                 key={msg.id}
+                data-msg={msg.role}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
@@ -599,7 +604,7 @@ export function ChatArea({
               </div>
             ))}
             {isLoading && (
-              <div className="flex justify-start">
+              <div data-msg="loading" className="flex justify-start">
                 <div className="bg-muted rounded-2xl px-4 py-3">
                   <Loader2 className="w-4 h-4 animate-spin" />
                 </div>
