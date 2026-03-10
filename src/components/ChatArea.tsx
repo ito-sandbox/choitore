@@ -167,7 +167,7 @@ export function ChatArea({
       const sectionInfo = getLessonSectionInfo(lessonState.currentIndex)
       // クイズ中のユーザー入力 → 回答として扱い、採点後にクイズ終了を指示
       const actualText = quizActive
-        ? `${text}\n\n[システム指示] これは確認テストへの回答です。正解/不正解を明示し、簡潔に解説してください。その後「では授業に戻りましょう。『次へ』で次のセクションに進めます。」で締めてください。追加の出題は絶対にしないでください。`
+        ? `${text}\n\n[システム指示] これは確認テストへの回答です。正解/不正解を明示し、簡潔に解説してください。その後「授業に戻る場合は『次へ』、さらに問題を解く場合は『確認テスト』をクリックしてください。」で締めてください。追加の出題は絶対にしないでください。`
         : text
       await sendWithPrompt(
         actualText,
